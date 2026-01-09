@@ -8,7 +8,7 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 router.post(
   "/",
   authMiddleware,
-  rbacMiddleware("sales", "admin"),
+  rbacMiddleware(["sales", "admin"]),
   orderController.createOrder
 );
 
@@ -18,21 +18,21 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  rbacMiddleware("admin", "sales", "viewer"),
+  rbacMiddleware(["admin", "sales", "viewer"]),
   orderController.getOrders
 );
 
 router.get(
   "/:id",
   authMiddleware,
-  rbacMiddleware("admin", "sales", "viewer"),
+  rbacMiddleware(["admin", "sales", "viewer"]),
   orderController.getOrderById
 );
 
 router.put(
   "/:id/status",
   authMiddleware,
-  rbacMiddleware("admin", "sales"),
+  rbacMiddleware(["admin", "sales"]),
   orderController.updateOrderStatus
 );
 

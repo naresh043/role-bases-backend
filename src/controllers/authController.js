@@ -1,9 +1,12 @@
+const jwt = require("jsonwebtoken"); 
 const authService = require("../services/authService");
+const User = require("../models/User");
 const { successResponse, errorResponse } = require("../utils/response");
 
+/* ===================== SIGNUP ===================== */
 const signup = async (req, res) => {
   try {
-      const { name, email, password, role } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
       return errorResponse({
@@ -39,13 +42,14 @@ const signup = async (req, res) => {
   } catch (error) {
     return errorResponse({
       res,
-      message: error.message,
+      message: "Signup failed",
       statusCode: 400,
       code: "VALIDATION_ERROR",
     });
   }
 };
 
+/* ===================== LOGIN ===================== */
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -69,13 +73,14 @@ const login = async (req, res) => {
   } catch (error) {
     return errorResponse({
       res,
-      message: error.message,
+      message: "Invalid email or password",
       statusCode: 401,
       code: "UNAUTHORIZED",
     });
   }
 };
 
+/* ===================== GET ME ===================== */
 const getMe = async (req, res) => {
   return successResponse({
     res,
@@ -90,44 +95,69 @@ const getMe = async (req, res) => {
   });
 };
 
+/* ===================== LOGOUT ===================== */
 const logout = async (req, res) => {
-  /**
-   * Since JWT is stateless, we don’t destroy anything on the server.
-   * The client simply deletes the token.
-   */
-
-  return res.status(200).json({
-    success: true,
-    message: "Logged out successfully"
+  // Stateless JWT logout — client removes tokens
+  return successResponse({
+    res,
+    message: "Logged out successfully",
   });
 };
 
+/* ===================== REFRESH TOKEN ===================== */
 const refreshToken = async (req, res) => {
-  const user = req.user; // from refresh token middleware
+  try {
+    const { userId, role } = req.user;
 
-  const newAccessToken = jwt.sign(
-    {
-      userId: user.userId,
-      role: user.role,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
-  );
+    if (!userId) {
+      return errorResponse({
+        res,
+        message: "Invalid refresh token",
+        statusCode: 401,
+        code: "UNAUTHORIZED",
+      });
+    }
 
-  return res.status(200).json({
-    success: true,
-    data: {
-      token: newAccessToken,
-      expiresIn: 3600,
-    },
-  });
+    const user = await User.findById(userId);
+    if (!user) {
+      return errorResponse({
+        res,
+        message: "User not found",
+        statusCode: 401,
+        code: "UNAUTHORIZED",
+      });
+    }
+
+    // ✅ Generate NEW access token
+    const newAccessToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+    );
+
+    return successResponse({
+      res,
+      message: "Access token refreshed successfully",
+      data: {
+        accessToken: newAccessToken,
+        expiresIn: 3600,
+      },
+    });
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    return errorResponse({
+      res,
+      message: "Failed to refresh token",
+      statusCode: 500,
+      code: "SERVER_ERROR",
+    });
+  }
 };
-
 
 module.exports = {
   signup,
   login,
   getMe,
   logout,
-  refreshToken
+  refreshToken,
 };

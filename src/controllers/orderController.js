@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const stockService = require("../services/stockService");
 const { successResponse, errorResponse } = require("../utils/response");
 
 /* =========================
@@ -20,14 +21,23 @@ const createOrder = async (req, res) => {
     let totalAmount = 0;
     const orderItems = [];
 
+    // 1️⃣ Validate products & calculate totals
     for (const item of items) {
       const product = await Product.findById(item.product);
 
-      if (!product) {
+      if (!product || !product.isActive) {
         return errorResponse({
           res,
-          message: "Product not found",
+          message: "Product not found or inactive",
           statusCode: 404,
+        });
+      }
+
+      if (product.stockQuantity < item.quantity) {
+        return errorResponse({
+          res,
+          message: `Insufficient stock for product ${product.name}`,
+          statusCode: 400,
         });
       }
 
@@ -43,6 +53,7 @@ const createOrder = async (req, res) => {
       });
     }
 
+    // 2️⃣ Create order
     const order = await Order.create({
       orderNumber: `ORD-${Date.now()}`,
       customerName,
@@ -53,6 +64,26 @@ const createOrder = async (req, res) => {
       notes,
       createdBy: req.user._id,
     });
+
+    // 3️⃣ Decrement stock & create stock logs
+    try {
+      for (const item of orderItems) {
+        await stockService.updateStock(
+          {
+            productId: item.product,
+            quantityChanged: -item.quantity, // 🔥 DECREMENT
+            changeType: "sale",
+            relatedOrder: order._id,
+            reason: "Order placed",
+          },
+          req.user
+        );
+      }
+    } catch (stockError) {
+      // 4️⃣ Rollback order if stock update fails
+      await Order.findByIdAndDelete(order._id);
+      throw stockError;
+    }
 
     return successResponse({
       res,
@@ -68,6 +99,7 @@ const createOrder = async (req, res) => {
   }
 };
 
+
 /* =========================
    GET ALL ORDERS
 ========================= */
@@ -76,7 +108,7 @@ const getOrders = async (req, res) => {
     const query = {};
 
     // Sales → only their orders
-    if (req.user.role === "SALES") {
+    if (req.user.role === "sales") {
       query.createdBy = req.user._id;
     }
 
@@ -115,7 +147,7 @@ const getOrderById = async (req, res) => {
 
     // Sales can only access their orders
     if (
-      req.user.role === "SALES" &&
+      req.user.role === "sales" &&
       order.createdBy._id.toString() !== req.user._id.toString()
     ) {
       return errorResponse({
