@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { successResponse, errorResponse } = require("../utils/response");
 
-
+/* ================= CREATE USER ================= */
 const createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -54,14 +54,11 @@ const createUser = async (req, res) => {
   }
 };
 
+/* ================= GET USERS (NO PAGINATION) ================= */
 const getUsers = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
     const role = req.query.role;
     const search = req.query.search;
-
-    const skip = (page - 1) * limit;
 
     // 🔍 Build query
     const query = { isActive: true };
@@ -77,14 +74,10 @@ const getUsers = async (req, res) => {
       ];
     }
 
-    // 📦 Fetch users
+    // 📦 Fetch users (ALL matching users)
     const users = await User.find(query)
       .select("-password")
-      .skip(skip)
-      .limit(limit)
       .sort({ createdAt: -1 });
-
-    const total = await User.countDocuments(query);
 
     return successResponse({
       res,
@@ -97,12 +90,6 @@ const getUsers = async (req, res) => {
         isActive: user.isActive,
         createdAt: user.createdAt,
       })),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
     });
   } catch (error) {
     return errorResponse({
@@ -112,8 +99,7 @@ const getUsers = async (req, res) => {
   }
 };
 
-
-
+/* ================= UPDATE USER ROLE ================= */
 const updateUserRole = async (req, res) => {
   try {
     const { role } = req.body;
@@ -157,7 +143,7 @@ const updateUserRole = async (req, res) => {
   }
 };
 
-
+/* ================= DELETE USER (SOFT DELETE) ================= */
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
