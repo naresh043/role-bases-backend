@@ -18,21 +18,21 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  rbacMiddleware("ADMIN", "SALES", "VIEWER"),
+  rbacMiddleware("admin", "sales", "viewer"),
   orderController.getOrders
 );
 
 router.get(
   "/:id",
   authMiddleware,
-  rbacMiddleware("ADMIN", "SALES", "VIEWER"),
+  rbacMiddleware("admin", "sales", "viewer"),
   orderController.getOrderById
 );
 
 router.put(
   "/:id/status",
   authMiddleware,
-  rbacMiddleware("ADMIN", "SALES"),
+  rbacMiddleware("admin", "sales"),
   orderController.updateOrderStatus
 );
 

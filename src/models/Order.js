@@ -40,15 +40,12 @@ const orderSchema = new mongoose.Schema(
     orderNumber: {
       type: String,
       required: true,
-      unique: true,
     },
-
     customerName: {
       type: String,
       required: true,
       trim: true,
     },
-
     customerEmail: {
       type: String,
       required: true,
@@ -59,30 +56,23 @@ const orderSchema = new mongoose.Schema(
         message: "Invalid email address",
       },
     },
-
     customerPhone: {
       type: String,
       trim: true,
       validate: {
-        validator: function (value) {
-          return !value || validator.isMobilePhone(value, "any");
-        },
-        message: "Invalid phone number",
+        validator: value => !value || validator.isMobilePhone(value, "any"),
       },
     },
-
     items: {
       type: [orderItemSchema],
       required: true,
       validate: [(v) => v.length > 0, "Order must have at least one item"],
     },
-
     totalAmount: {
       type: Number,
       required: true,
       min: 0,
     },
-
     status: {
       type: String,
       enum: [
@@ -95,21 +85,16 @@ const orderSchema = new mongoose.Schema(
       ],
       default: "pending",
     },
-
     orderDate: {
       type: Date,
       default: Date.now,
     },
-
     deliveryDate: Date,
-
     notes: String,
-
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -125,3 +110,4 @@ orderSchema.index({ orderDate: -1 });
 orderSchema.index({ createdBy: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);
+
