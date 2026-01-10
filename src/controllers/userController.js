@@ -74,15 +74,20 @@ const getUsers = async (req, res) => {
       ];
     }
 
-    // 📦 Fetch users (ALL matching users)
+    // 📦 Fetch users
     const users = await User.find(query)
       .select("-password")
       .sort({ createdAt: -1 });
 
+    // ❌ Remove logged-in user
+    const filteredUsers = users.filter(
+      (user) => user._id.toString() !== req.user._id.toString()
+    );
+
     return successResponse({
       res,
       message: "Users fetched successfully",
-      data: users.map(user => ({
+      data: filteredUsers.map(user => ({
         id: user._id,
         name: user.name,
         email: user.email,
@@ -98,6 +103,7 @@ const getUsers = async (req, res) => {
     });
   }
 };
+
 
 /* ================= UPDATE USER ROLE ================= */
 const updateUserRole = async (req, res) => {
