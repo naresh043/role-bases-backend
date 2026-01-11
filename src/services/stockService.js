@@ -11,7 +11,7 @@ const updateStock = async (data, user) => {
     relatedOrder,
   } = data;
 
-  if (!productId || !quantityChanged || !changeType) {
+  if (!productId || quantityChanged === undefined || !changeType) {
     throw new Error("productId, quantityChanged and changeType are required");
   }
 
