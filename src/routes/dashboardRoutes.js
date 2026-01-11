@@ -9,7 +9,7 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 router.get(
   "/admin",
   authMiddleware,
-  rbacMiddleware(["admin"]),
+  rbacMiddleware(["admin","sales"]),
   dashboardController.getAdminDashboard
 );
 
