@@ -22,7 +22,7 @@ const getAdminDashboardData = async () => {
   // Recent orders (last 5)
   const recentOrders = await Order.find()
     .sort({ createdAt: -1 })
-    .limit(5)
+    .limit(4)
     .select("orderNumber status totalAmount createdAt");
 
   return {
