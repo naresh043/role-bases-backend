@@ -124,3 +124,4 @@ The server will run on `http://localhost:3000` by default.
 This backend is decoupled from the frontend and communicates via secure HTTP requests. The frontend consumes these APIs to provide a user interface for the system.
 
 Ensure to follow best practices for deployment, including using HTTPS in production and regular security audits.
+   
