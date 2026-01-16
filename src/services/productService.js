@@ -8,8 +8,31 @@ const createProduct = async (data, user) => {
   return product;
 };
 
-const getProducts = async () => {
-  return await Product.find({ isActive: true });
+/* ================= PAGINATED PRODUCTS ================= */
+const getProducts = async ({ page = 1, limit = 10 }) => {
+  const skip = (page - 1) * limit;
+
+  const filter = { isActive: true };
+
+  const [products, total] = await Promise.all([
+    Product.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+
+    Product.countDocuments(filter),
+  ]);
+
+  return {
+    data: products,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 const getProductById = async (id) => {
