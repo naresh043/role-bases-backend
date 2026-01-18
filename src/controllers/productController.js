@@ -17,16 +17,23 @@ const createProduct = async (req, res) => {
 
 const getProducts = async (req, res) => {
   try {
-    const products = await productService.getProducts();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const result = await productService.getProducts({ page, limit });
+
     return successResponse({
       res,
       message: "Products fetched successfully",
-      data: products,
+      data: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     return errorResponse({ res, message: error.message });
   }
 };
+
+
 
 const getProductById = async (req, res) => {
   try {
@@ -62,6 +69,7 @@ const updateProduct = async (req, res) => {
     return errorResponse({ res, message: error.message });
   }
 };
+
 
 const deleteProduct = async (req, res) => {
   try {

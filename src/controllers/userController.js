@@ -60,6 +60,11 @@ const getUsers = async (req, res) => {
     const role = req.query.role;
     const search = req.query.search;
 
+    // 📄 Pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
     // 🔍 Build query
     const query = { isActive: true };
 
@@ -74,12 +79,16 @@ const getUsers = async (req, res) => {
       ];
     }
 
-    // 📦 Fetch users
+    // 📊 Count total users first
+    const totalUsers = await User.countDocuments(query);
+    // 📦 Fetch users with pagination
     const users = await User.find(query)
       .select("-password")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    // ❌ Remove logged-in user
+    // ❌ Remove logged-in user (important: do this BEFORE sending response, but AFTER query)
     const filteredUsers = users.filter(
       (user) => user._id.toString() !== req.user._id.toString()
     );
@@ -95,6 +104,12 @@ const getUsers = async (req, res) => {
         isActive: user.isActive,
         createdAt: user.createdAt,
       })),
+      pagination: {
+        total: totalUsers,
+        page,
+        limit,
+        totalPages: Math.ceil(totalUsers / limit),
+      },
     });
   } catch (error) {
     return errorResponse({
@@ -103,6 +118,7 @@ const getUsers = async (req, res) => {
     });
   }
 };
+
 
 
 /* ================= UPDATE USER ROLE ================= */
